@@ -1,4 +1,4 @@
-public class Process implements Comparable<Process>
+public class Process
 {
 	private int processNumber;
 	private int arrivalTime;
@@ -14,21 +14,6 @@ public class Process implements Comparable<Process>
 		burstTime = remainingTime = b;
 		priority = p;
 		finished = false;
-	}
-
-	public int compareTo(Process pr)
-	{
-		if(getArrivalTime() < pr.getArrivalTime())
-		{
-			return -1;
-		}
-
-		else if(getArrivalTime() == pr.getArrivalTime())
-		{
-			return 0;
-		}
-
-		return 1;
 	}
 
 	public int getArrivalTime()
@@ -51,14 +36,14 @@ public class Process implements Comparable<Process>
 		return remainingTime;
 	}
 
-	public void yourTurn(int t)
+	public void runUntil(int t)
 	{
 		remainingTime -= t;
 	}
 
-	public void minus1Sec()
+	public int getPriority()
 	{
-		remainingTime--;
+		return priority;
 	}
 
 }

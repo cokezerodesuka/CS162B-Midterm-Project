@@ -12,10 +12,11 @@ public class ProcessDriver
 		for(int i = 1; i <= T; i++)
 		{
 			System.out.println(i);
-			ArrayList<Process> process = new ArrayList<Process>();
+			
 			String input = sc.nextLine();
 			String[] arg = input.split(" ");
 
+			List<Process> process = new ArrayList<Process>();
 			for(int j = 1; j <= Integer.parseInt(arg[0]); j++)
 			{
 				String inputProcess = sc.nextLine();
@@ -27,27 +28,27 @@ public class ProcessDriver
 				process.add(new Process(j,a,b,p));
 			}
 
-
 			switch(arg[1])
 			{
 				case "FCFS":
 				{
+					
 					System.out.print(FCFS(process));
 					break;
 				}
 				case "SJF":
 				{
-					SJF();
+					//System.out.print(SJF(process));
 					break;
 				}
 				case "SRTF":
 				{
-					SRTF();
+					//System.out.print(SRTF(process));
 					break;
 				}
 				case "P":
 				{
-					P();
+					//P();
 					break;
 				}
 				case "RR":
@@ -61,12 +62,49 @@ public class ProcessDriver
 	}
 
 	// First Come First Served
-	// First Come First Served
-	public static String FCFS(ArrayList<Process> p)
+	public static String FCFS(List<Process> p)
 	{
-		Collections.sort(p); // sort by their arrival time;
+		Collections.sort(p, new ProcessChainedComparator(
+	                new ProcessArrivalTimeComparator()));
 		String output = "";
 		int currentTime = 0; // 0 ns
+
+		while(p.isEmpty()!=true)
+		{
+			if(p.get(0).getArrivalTime() <= currentTime)
+			{
+				output += currentTime;
+			}
+
+			else
+			{
+				output += p.get(0).getArrivalTime();
+			}
+			output += " ";
+			output += p.get(0).getProcessNumber();
+			output += " ";
+			output += p.get(0).getBurstTime();
+
+			currentTime += p.get(0).getBurstTime();
+
+			p.get(0).runUntil(p.get(0).getBurstTime());
+
+			if(p.get(0).getRemainingTime() == 0)
+			{
+				output += "X\n";
+				p.remove(0);
+			}
+		}
+		return output;
+	}
+
+	//Shortest Job First, non­preemptive
+	public static String SJF(List<ProcessJob> p)
+	{
+		ArrayList<ProcessJob> temp = new ArrayList<ProcessJob>();
+		Collections.sort(p);
+		String output = "";
+		int currentTime = p.get(0).getArrivalTime(); // 0 ns
 
 		while(p.isEmpty()!=true)
 		{
@@ -97,16 +135,11 @@ public class ProcessDriver
 		return output;
 	}
 
-	//Shortest Job First, non­preemptive
-	public static void SJF()
-	{
-		System.out.println("SJF");
-	}
-
 	//SRTF (Shortest Remaining Time First, SJF preemptive), 
-	public static void SRTF()
+	public static String SRTF(List<ProcessJob> p)
 	{
-		System.out.println("SRTF");
+		String output = "not yet done";
+		return output;
 	}
 
 	// P (Priority), 
@@ -116,9 +149,10 @@ public class ProcessDriver
 	}
 
 	// Round Robin
-	public static String RR(ArrayList<Process> p, int time)
+	public static String RR(List<Process> p, int time)
 	{
-		Collections.sort(p); // sort by their arrival time;
+		Collections.sort(p, new ProcessChainedComparator(
+	                new ProcessArrivalTimeComparator()));
 		String output = "";
 		int currentTime = p.get(0).getArrivalTime(); // 0 ns
 		int counter = 0;
@@ -151,7 +185,7 @@ public class ProcessDriver
 					currentTime += time;
 				}
 
-				p.get(counter).yourTurn(time);
+				p.get(counter).runUntil(time);
 
 
 				if(p.get(counter).getRemainingTime() <= 0)
