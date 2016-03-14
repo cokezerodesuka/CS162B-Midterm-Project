@@ -5,7 +5,7 @@ public class Process
 	private int burstTime;
 	private int remainingTime;
 	private int priority;
-	private boolean finished;
+	private boolean insideOfQueue;
 
 	public Process(int pn, int a, int b, int p)
 	{
@@ -13,7 +13,7 @@ public class Process
 		arrivalTime = a;
 		burstTime = remainingTime = b;
 		priority = p;
-		finished = false;
+		insideOfQueue = false;
 	}
 
 	public int getArrivalTime()
@@ -44,6 +44,16 @@ public class Process
 	public int getPriority()
 	{
 		return priority;
+	}
+
+	public boolean isInsideOfQueue()
+	{
+		return insideOfQueue;
+	}
+
+	public void setInsideOfQueue(boolean b)
+	{
+		insideOfQueue = b;
 	}
 
 }

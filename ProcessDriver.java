@@ -25,6 +25,8 @@ public class ProcessDriver
 				int b = Integer.parseInt(arg1[1]);
 				int p = Integer.parseInt(arg1[2]);
 
+				System.out.println(arg[1] + " " + a + " " + b + " " + p);
+
 				process.add(new Process(j,a,b,p));
 			}
 
@@ -38,17 +40,23 @@ public class ProcessDriver
 				}
 				case "SJF":
 				{
-					//System.out.print(SJF(process));
+					String fin =  SJF(process);
+					System.out.print(fin);
 					break;
 				}
 				case "SRTF":
 				{
-					//System.out.print(SRTF(process));
+					String fin =  SRTF(process);
+					String what = format(fin);
+					System.out.print(what);
+
 					break;
 				}
 				case "P":
 				{
-					//P();
+					String fin =  P(process);
+					String what = format(fin);
+					System.out.print(what);
 					break;
 				}
 				case "RR":
@@ -99,53 +107,273 @@ public class ProcessDriver
 	}
 
 	//Shortest Job First, non­preemptive
-	public static String SJF(List<ProcessJob> p)
+	public static String SJF(List<Process> p)
 	{
-		ArrayList<ProcessJob> temp = new ArrayList<ProcessJob>();
-		Collections.sort(p);
+		List<Process> temp = new ArrayList<Process>();
+		Collections.sort(p, new ProcessChainedComparator(
+	                new ProcessArrivalTimeComparator(),
+	                new ProcessRemainingTimeComparator()));
 		String output = "";
-		int currentTime = p.get(0).getArrivalTime(); // 0 ns
+		int currentTime = p.get(0).getArrivalTime(); // 
 
-		while(p.isEmpty()!=true)
+		temp.add(p.get(0));
+		p.remove(0);
+
+		while(temp.isEmpty()!=true)
 		{
-			if(p.get(0).getArrivalTime() <= currentTime)
-			{
-				output += currentTime;
-			}
-
-			else
-			{
-				output += p.get(0).getArrivalTime();
-			}
+			output += currentTime; // start
 			output += " ";
-			output += p.get(0).getProcessNumber();
+			output += temp.get(0).getProcessNumber();
 			output += " ";
-			output += p.get(0).getBurstTime();
+			output += temp.get(0).getRemainingTime();
 
-			currentTime += p.get(0).getBurstTime();
+			currentTime += temp.get(0).getRemainingTime();
+			temp.get(0).runUntil(temp.get(0).getRemainingTime());
 
-			p.get(0).yourTurn(p.get(0).getBurstTime());
-
-			if(p.get(0).getRemainingTime() == 0)
+			if(temp.get(0).getRemainingTime() <= 0)
 			{
 				output += "X\n";
-				p.remove(0);
+				temp.remove(0);
+
+				if(temp.isEmpty() != true)
+				{
+					if(currentTime < temp.get(0).getArrivalTime())
+					{
+						currentTime = temp.get(0).getArrivalTime();
+					}
+				}
+
+				if(temp.isEmpty() == true && p.isEmpty() != true)
+				{
+					if(currentTime < p.get(0).getArrivalTime())
+					{
+						currentTime = p.get(0).getArrivalTime();
+					}
+				}
 			}
+
+			// 
+			for (int i = p.size()-1; i >= 0; i--){
+			    if ( p.get(i).getArrivalTime() <= currentTime)
+			    {
+			    	temp.add(p.get(i));
+			        p.remove(i);
+			    }
+			 }
+
+			Collections.sort(temp, new ProcessChainedComparator(
+	            new ProcessRemainingTimeComparator()));
 		}
 		return output;
 	}
 
 	//SRTF (Shortest Remaining Time First, SJF preemptive), 
-	public static String SRTF(List<ProcessJob> p)
+	public static String SRTF(List<Process> p)
 	{
-		String output = "not yet done";
+		List<Process> temp = new ArrayList<Process>();
+		Collections.sort(p, new ProcessChainedComparator(
+	                new ProcessArrivalTimeComparator(),
+	                new ProcessRemainingTimeComparator()));
+		String output = "";
+
+		temp.add(p.get(0));
+		p.remove(0);
+
+		int currentTime = temp.get(0).getArrivalTime(); // 
+		int elapsed = 0;
+		int newCurrentTime = 0;
+		int curProcess= temp.get(0).getProcessNumber();
+		boolean newEntry = false;
+		int startTime = 0;
+		int strTime = 0;
+		int strtProcNum = 0;
+		int prevProcess = -1;
+
+		while(temp.isEmpty()!=true)
+		{
+			//System.out.println(curProcess + " " + prevProcess);
+			output += currentTime; // start
+			output += " ";
+			output += temp.get(0).getProcessNumber();
+			output += " ";
+
+			if(p.size() >0)
+			{
+				//check
+				newCurrentTime = Math.min(currentTime + temp.get(0).getRemainingTime(), p.get(0).getArrivalTime());
+
+			}
+
+			else
+			{
+				newCurrentTime += temp.get(0).getRemainingTime();
+			}
+
+			int time = newCurrentTime - currentTime;
+			currentTime = newCurrentTime;
+			elapsed += time;
+			temp.get(0).runUntil(time);
+			
+			prevProcess = curProcess;
+
+			for (int i = p.size()-1; i >= 0; i--){
+				if ( p.get(i).getArrivalTime() <= currentTime)
+				{
+				   	temp.add(p.get(i));
+				    p.remove(i);
+				}
+			}
+		
+			Collections.sort(temp, new ProcessChainedComparator(
+	            new ProcessRemainingTimeComparator()));
+
+			int index = 0;
+
+			for(int i = 0; i < temp.size(); i++)
+			{
+				if(temp.get(i).getProcessNumber() == curProcess)
+				{
+					index =i;
+				}
+			}
+
+			if(curProcess != temp.get(0).getProcessNumber())
+			{
+				newEntry = true;
+				output += elapsed;
+				elapsed =0;
+			}
+			
+			else
+			{
+				
+				newEntry = false;
+				output += time;
+			}
+
+
+			if(temp.get(index).getRemainingTime() <= 0)
+			{
+				output += "X";
+				temp.remove(index);
+				elapsed = 0;
+			}
+
+			if(temp.isEmpty() != true)
+			{
+				curProcess = temp.get(0).getProcessNumber();
+			}
+			//output +="\n";
+			output += " ";
+		}
 		return output;
 	}
 
 	// P (Priority), 
-	public static void P()
+	public static String P(List<Process> p)
 	{
-		System.out.println("P");
+		List<Process> temp = new ArrayList<Process>();
+		Collections.sort(p, new ProcessChainedComparator(
+	                new ProcessArrivalTimeComparator(),
+	                new ProcessPriorityComparator()));
+		String output = "";
+
+		temp.add(p.get(0));
+		p.remove(0);
+
+		int currentTime = temp.get(0).getArrivalTime(); // 
+		int elapsed = 0;
+		int newCurrentTime = 0;
+		int curProcess= temp.get(0).getProcessNumber();
+		boolean newEntry = false;
+		int startTime = 0;
+		int strTime = 0;
+		int strtProcNum = 0;
+		int prevProcess = -1;
+
+		while(temp.isEmpty()!=true)
+		{
+			//System.out.println(curProcess + " " + prevProcess);
+			output += currentTime; // start
+			output += " ";
+			output += temp.get(0).getProcessNumber();
+			output += " ";
+
+			if(p.size() >0)
+			{
+				//check
+				newCurrentTime = Math.min(currentTime + temp.get(0).getRemainingTime(), p.get(0).getArrivalTime());
+
+			}
+
+			else
+			{
+				newCurrentTime += temp.get(0).getRemainingTime();
+			}
+
+			int time = newCurrentTime - currentTime;
+			currentTime = newCurrentTime;
+			elapsed += time;
+			temp.get(0).runUntil(time);
+			
+			prevProcess = curProcess;
+
+			for (int i = p.size()-1; i >= 0; i--){
+				if ( p.get(i).getArrivalTime() <= currentTime)
+				{
+				   	temp.add(p.get(i));
+				    p.remove(i);
+				}
+			}
+		
+			Collections.sort(temp, new ProcessChainedComparator(
+	            new ProcessPriorityComparator()));
+
+			/*or(Process ct: temp)
+			{
+				System.out.println(currentTime + " " + ct.getProcessNumber() + " " + ct.getPriority());
+			}*/
+
+			int index = 0;
+
+			for(int i = 0; i < temp.size(); i++)
+			{
+				if(temp.get(i).getProcessNumber() == curProcess)
+				{
+					index =i;
+				}
+			}
+
+			if(curProcess != temp.get(0).getProcessNumber())
+			{
+				newEntry = true;
+				output += elapsed;
+				elapsed =0;
+			}
+			
+			else
+			{
+				
+				newEntry = false;
+				output += time;
+			}
+
+
+			if(temp.get(index).getRemainingTime() <= 0)
+			{
+				output += "X";
+				temp.remove(index);
+				elapsed = 0;
+			}
+
+			if(temp.isEmpty() != true)
+			{
+				curProcess = temp.get(0).getProcessNumber();
+			}
+			//output +="\n";
+			output += " ";
+		}
+		return output;
 	}
 
 	// Round Robin
@@ -207,5 +435,41 @@ public class ProcessDriver
 			}
 		}
 		return output;
+	}
+
+	public static String format(String str)
+	{
+		String[] arg = str.split(" ");
+		//System.out.println(arg.length);
+		String finalOutput = "";
+
+		for(int j = 1; j < arg.length-4; j+=3)
+		{
+			//System.out.println(arg[j] + " " + arg[j+3]);
+			if(arg[j].equals(arg[j+3]))
+			{
+				//System.out.println("WHAT");
+				arg[j+1] = arg[j+4];
+				arg[j+2] = arg[j+3] = arg[j+4] = ""; 
+			}
+		}
+
+		for(int j = 0; j < arg.length; j++)
+		{
+			if(!arg[j].equals(""))
+			{
+				finalOutput += arg[j];
+				finalOutput += " ";
+			}
+
+			if(!arg[j].equals("") && j % 3 == 2)
+			{
+				finalOutput += "\n";
+			}
+
+		}
+
+
+		return finalOutput;
 	}
 }
